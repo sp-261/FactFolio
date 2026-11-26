@@ -1,8 +1,147 @@
-# Financial Report Copilot
+# FactFolio
 
-Agentic RAG system for the Track B capstone (API-side, hosted <=8B inference APIs): a **financial report copilot over SEC annual reports**.
+**Facts on every company. Insight into every portfolio.**
 
-It answers questions about company filings with every figure cited to its page, compares companies, checks growth with a calculator, and refuses advice or anything the filings don't cover. It uses hybrid retrieval (dense vectors + BM25, fused by reciprocal rank), LangGraph agents with guardrails and a support-checking critic, human-in-the-loop routing, a FastAPI backend, a Streamlit UI and retrieval evaluation. The agent flow is described in [docs/agent_flows.md](docs/agent_flows.md). A walkthrough of one question per agent, from the Streamlit chat through FastAPI, the checks and the Chroma index to the hosted LLM's answer (with LangSmith traces), is in [docs/end_to_end_walkthrough.md](docs/end_to_end_walkthrough.md).
+FactFolio is a citation-grounded **Agentic RAG** assistant over SEC annual reports and mutual fund holdings. Ask about a company's figures, a multi-year trend, a comparison across companies, a sector, or a fund, and every number in the answer links to the filing page it came from. If the filings can't support an answer, FactFolio says so instead of guessing.
+
+Capstone project, **Track B (API-side)**, Executive Post Graduate Programme in Generative AI and Agentic AI, IIT Kharagpur, November 2026. Team **SIMPLR**.
+
+## At a glance
+
+| | |
+|---|---|
+| Corpus | 509 SEC annual reports (Form ARS) from 143 companies in 13 sectors, FY2022–2026: 81,715 pages, 335,699 indexed chunks. Vanguard fund holdings from SEC Form N-PORT |
+| Model | Hosted Qwen3-8B (8,192-token context, 1,024 output tokens), used through an OpenAI-compatible API with no access to weights |
+| Retrieval | Chroma (bge-small-en-v1.5) + BM25, fused by reciprocal rank, filtered to one company and year, cross-encoder rerank |
+| Agents | 7 LangGraph agents behind a router: Q&A, trend, sector trend, shareholder returns, dividend income, mutual fund, report hand-off. Capped at 10 steps |
+| Safety | Input and evidence guards, policy refusals (advice, forecasts, personal data), a critic that withholds any figure not found on a cited page, human-review routing |
+| Stack | FastAPI backend, Streamlit UI, LangSmith tracing, Docker Compose |
+
+## Results
+
+On 86 test questions frozen before the agents were built (hosted Qwen3-8B):
+
+| Approach | Right answers |
+|---|---|
+| Prompt only (no retrieval) | 13% |
+| Best single RAG prompt | 74% |
+| **FactFolio agents** | **83%** |
+
+Wrong or partial answers shown to the user fell from 11 to 2. Across all 113 questions, including the agent tasks, the agents answered 86% correctly against 62% for a single RAG prompt. These questions also guided our fixes, so this is not a blind test; details and limits are in the technical report.
+
+## Submission deliverables
+
+| Deliverable | Where |
+|---|---|
+| Git repository with reproducible code | This repository: [Quick start](#quick-start) below, `uv.lock` for exact package versions, an offline test suite |
+| Trace dashboard (Track B) | [TRACES.md](TRACES.md): LangSmith trace links and screenshots. How tracing works: [docs/observability_langsmith.md](docs/observability_langsmith.md) |
+| Model card and Responsible AI | [MODEL_CARD.md](MODEL_CARD.md): intended use, failure modes, refusals, adversarial tests |
+| Technical report | [docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx](docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx) |
+| Demo video (10 min) | [link to be added] |
+
+## Quick start
+
+Python 3.12 and [uv](https://docs.astral.sh/uv/) are recommended. Commands are shown for macOS/Linux; on Windows use `.venv\Scripts\python.exe` and backslashes in paths.
+
+### 1. Install and run the tests (no keys, models or data needed)
+
+```bash
+git clone https://github.com/sp-261/FactFolio.git
+cd FactFolio
+uv sync
+.venv/bin/python -m pytest tests -q
+```
+
+About 720 tests run offline in a few minutes. They cover the agents, guardrails, retrieval, API and UI.
+
+### 2. Offline demo (mock LLM, no keys)
+
+```bash
+.venv/bin/python -m uvicorn scripts.api.api_app:app --host 127.0.0.1 --port 8000
+.venv/bin/streamlit run scripts/ui/api_streamlit_app.py
+```
+
+Open http://localhost:8501. Without a hosted model the app runs in **Test mode** (an orange notice on the page): the full pipeline, guards and UI work, but answers are placeholder text.
+
+### 3. Full system (real index and hosted model)
+
+1. Download the prebuilt index (`chroma_db_final.tar`) and `mutual_fund_data.zip` from the team's shared drive and unpack them into `indexes/rag_home/indexes/`.
+2. Put the course API credentials in place. These are **never committed**: `secrets/` and `indexes/` are ignored by Git.
+   - Chat key: `secrets/llm_api_key.txt`
+   - Chat server certificate: `indexes/rag_home/secrets/llm_ca.crt`
+3. Start the API with the hosted model:
+
+```bash
+export LLM_API_KEY="$(tr -d '[:space:]' < secrets/llm_api_key.txt)"
+export LLM_API_BASE=https://103.42.50.41:1032/v1 LLM_MODEL=Qwen/Qwen3-8B LLM_MAX_TOKENS=1024
+export DEFAULT_LLM_PROVIDER=hosted HF_HUB_OFFLINE=1
+export RAG_REQUEST_TIMEOUT_SECONDS=180 RAG_HTTP_TIMEOUT_SECONDS=90
+.venv/bin/python -m uvicorn scripts.api.api_app:app --host 127.0.0.1 --port 8000
+```
+
+4. In a second terminal: `.venv/bin/streamlit run scripts/ui/api_streamlit_app.py`
+
+The step-by-step guide, with checks after each step, is [docs/local_setup_guide.html](docs/local_setup_guide.html). To build the index from scratch (Colab, about 509 filings), see [Data download](#data-download) and [docs/deployment.md](docs/deployment.md).
+
+### Try these questions
+
+| Agent | Question |
+|---|---|
+| Q&A | Compare Costco and Walmart revenue in 2025 |
+| Trend | How did JPMorgan Chase's net income trend from 2022 to 2025? |
+| Sector trend | How did banking sector net income trend from 2022 to 2025? |
+| Mutual fund | What are the top 10 holdings of the Vanguard 500 Index Fund? |
+| Refusal | Should I buy Apple stock? |
+
+More questions with expected answers: [docs/agent_test_questions.html](docs/agent_test_questions.html). How to read an answer and its checks: [docs/agent_user_guide.html](docs/agent_user_guide.html).
+
+## Documentation map
+
+| Topic | Document |
+|---|---|
+| How each agent works, step by step | [docs/agent_flows.md](docs/agent_flows.md) |
+| One question per agent, end to end, with traces | [docs/end_to_end_walkthrough.md](docs/end_to_end_walkthrough.md) |
+| API reference | [docs/fastapi_api.md](docs/fastapi_api.md) |
+| Week 1 baseline and failure scenarios | [docs/week1_failure_scenarios.md](docs/week1_failure_scenarios.md) |
+| Mutual fund data and agent | [docs/mutual_fund_rag_design.md](docs/mutual_fund_rag_design.md) |
+| Deterministic financial report generation | [docs/financial_report_generation.md](docs/financial_report_generation.md) |
+| Deployment options and costs | [docs/deployment.md](docs/deployment.md) |
+
+## Team SIMPLR and contributions
+
+**Contributors:** Laxmi Mohta, Sandeep Patil, Rama Krishna Dasaraju and Praket Sanganeria.
+
+Contributions follow the [CRediT](https://credit.niso.org/) contributor roles. All contributors took part in every role below.
+
+| CRediT role | What it covered in FactFolio |
+|---|---|
+| Conceptualization | Problem framing, scope and the agentic RAG approach |
+| Methodology | Agent design, hybrid retrieval, page routing, guardrails and the evaluation protocol |
+| Investigation | Research on RAG architectures, page readers and the SEC EDGAR and N-PORT data |
+| Data curation | The 509-filing corpus, the N-PORT fund holdings and the frozen evaluation set |
+| Software | Ingestion, retrieval, agents, guardrails, the FastAPI backend and the Streamlit UI |
+| Validation | Unit tests, the frozen evaluation, agent testing and adversarial testing |
+| Formal analysis | Baselines, results analysis and failure analysis |
+| Visualization | The FactFolio interface, architecture diagrams and result figures |
+| Writing – original draft | Technical report, design notes, guides and the model card |
+| Writing – review & editing | Review of the report, documentation and demo script |
+| Project administration | Planning, milestones, repository management and submission |
+
+**Also on the team roster:** Manideep Gubbala and Jai Kishan.
+
+## Project history
+
+Development started on 23 October 2026 in the team's working repository (`rama159065/Capstone`) and moved here on 26 November 2026 with its full history preserved: every commit, branch, author and date is unchanged. A dated progress log is in [docs/project_timeline.md](docs/project_timeline.md).
+
+## Acknowledgements
+
+SEC EDGAR for the annual reports and N-PORT filings; the course team for the hosted Qwen3-8B and embedding endpoints. We used Claude (Anthropic) as a coding and writing assistant; all design decisions, experiments and evaluation results are the team's own.
+
+---
+
+# Technical reference
+
+The sections below are the full command and design reference.
 
 ## Why This Is Agentic RAG
 
@@ -61,7 +200,7 @@ On Colab, `cp.serve(s)` serves the notebook's pipeline, and `cp.serve(s, backend
 docs/                         Design notes and capstone documentation
 scripts/
   api/            FastAPI backend (api_app.py): financial chat, conversation, retrieval, companies
-  ui/             Streamlit front ends: API-backed Financial Report Copilot (api_streamlit_app.py), standalone financial app
+  ui/             Streamlit front ends: API-backed FactFolio app (api_streamlit_app.py), standalone financial app
   agents/         Financial agent graph and tools, clarifier, safe answer (multimodal)
   guardrails/     Shared input / evidence / output safety checks and their regex pattern sets
   prompts/        Prompt templates for the financial and domain agents
@@ -106,9 +245,9 @@ pip install -e .
 
 Optional OCR support for scanned pages, tables, or chart images requires Tesseract installed on the operating system. The current implementation can run without OCR for text-based PDFs.
 
-## Quick Start
+## Developer smoke test (hashing embeddings, mock LLM)
 
-Run a small local smoke test with deterministic hashing embeddings:
+Build a tiny index from 5 PDFs and run one agent offline:
 
 ```powershell
 python scripts\downloads\download_financial_report_pdfs.py --target-pdfs 5
@@ -273,7 +412,7 @@ python scripts\agents\financial_prompting_agent.py --llm-provider hosted --techn
 
 ## Streamlit Chat UIs
 
-API-backed Streamlit UI (the Financial Report Copilot) for the final architecture:
+API-backed Streamlit UI (FactFolio) for the final architecture:
 
 ```powershell
 uvicorn scripts.api.api_app:app --host 127.0.0.1 --port 8000
