@@ -1,0 +1,16 @@
+# FactFolio project timeline
+
+Development ran from 23 October to 26 November 2026: 142 commits on `master`, on 31 of those 35 days, with no gap longer than two days. The project started in the team's working repository (`rama159065/Capstone`) and moved to `sp-261/FactFolio` on 26 November 2026 with its full history unchanged. Dates below are commit dates; run `git log --reverse --no-merges` to see every step.
+
+| Week | Dates | Milestones | Evidence |
+|---|---|---|---|
+| 1 | 23–26 Oct | Repository set up; first agentic RAG flow with content filtering and LangSmith; FastAPI backend with validation, rate limiting, logging, a grounding check and a streaming design; multimodal retrieval with ColPali started | [docs/fastapi_api.md](fastapi_api.md), [docs/fastapi_streaming_design.md](fastapi_streaming_design.md) |
+| 2 | 27 Oct – 2 Nov | Multimodal retrieval with OCR and recall metrics; fallbacks and timeouts for model calls; deterministic financial report generation | [docs/selective_ocr.md](selective_ocr.md), [docs/financial_report_generation.md](financial_report_generation.md) |
+| 3 | 3–9 Nov | Week 1 task specification, prompt baselines and failure scenarios; financial data download; Streamlit connected to the API; code reorganised into layered packages with shared guardrails; the frozen 86-question evaluation set; reranking; RAG architecture comparison notebooks; the 1,004-filing corpus plan | [data/evaluation/financial_report_qa/eval_set_v1.md](../data/evaluation/financial_report_qa/eval_set_v1.md), [docs/week1_task_specification.md](week1_task_specification.md), [docs/week1_prompt_baselines.md](week1_prompt_baselines.md), [docs/week1_failure_scenarios.md](week1_failure_scenarios.md), [docs/annual_report_corpus_plan.html](annual_report_corpus_plan.html) |
+| 4 | 10–16 Nov | RAG and agent refactor; the 500-filing preset; agents with an LLM judge; scope narrowed to financial reports; page audit and routed page reading (OCR, Qwen3-VL, paid fallback); hybrid dense + BM25 retrieval; one chunk schema for both indexes; sector trend agent; deployment and GCP plans; mutual fund data and agent | [docs/agent_flows.md](agent_flows.md), [docs/mutual_fund_rag_design.md](mutual_fund_rag_design.md), [docs/deployment.md](deployment.md) |
+| 5 | 17–23 Nov | Page analyser fixes and full corpus ingestion; agent evaluation runs; Chroma as the main index; the Chroma + ColPali hybrid proof of concept; end-to-end LangSmith tracing; end-to-end Colab notebook; testing and ingestion fixes; shareholder-returns and dividend-income agents | [docs/hybrid_retrieval.html](hybrid_retrieval.html), [docs/observability_langsmith.md](observability_langsmith.md) |
+| 6 | 24–26 Nov | Docker and GCP deployment plan; technical deck and technical report; local setup guide; chat UI with the "Thought for N s" panel; follow-up questions keep their context; FactFolio launch page, branding and tagline; report approval in the UI; adversarial testing; model card | [docs/local_setup_guide.html](local_setup_guide.html), [docs/final_tech_document/](final_tech_document/), [MODEL_CARD.md](../MODEL_CARD.md) |
+
+## Contributors
+
+Laxmi Mohta, Sandeep Patil, Rama Krishna Dasaraju and Praket Sanganeria. See the contributions section of the [README](../README.md#team-simplr-and-contributions).
