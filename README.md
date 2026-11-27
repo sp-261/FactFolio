@@ -39,7 +39,7 @@ Wrong or partial answers shown to the user fell from 11 to 2. Across all 113 que
 | Technical report (12 pages) | [docs/final_tech_document/FactFolio_Technical_Report.pdf](docs/final_tech_document/FactFolio_Technical_Report.pdf) (Word version: [FactFolio_Technical_Report.docx](docs/final_tech_document/FactFolio_Technical_Report.docx)) |
 | Evaluation report and failure taxonomy | Section 8 of the technical report: the Week 1 baselines, the agents against the baselines, accuracy, reliability and cost, and the failure taxonomy (Table 6) |
 | Working deployed system | Live on Google Cloud (Mumbai, e2-standard-4, Docker Compose, HTTPS): https://8-234-95-222.sslip.io. Login shared with evaluators. Deployment files: `docker-compose.gcp.yml`, `deploy/Dockerfile.local`; guide: [docs/gcp.md](docs/gcp.md) |
-| Demo video (10 min) | [link to be added] |
+| Demo video (11 min 47 s) | [FactFolio demo video](https://drive.google.com/file/d/1quUtnr6Xn67VxJPNSoWrjWFhdfOPueux/view?usp=drive_link) · all deliverables: [Drive folder](https://drive.google.com/drive/folders/120zNIJpvhYiPwdNrwS2pq0fJdAkC4cIn?usp=drive_link) |
 
 ## Quick start
 
