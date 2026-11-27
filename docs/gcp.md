@@ -1,8 +1,64 @@
-# Deploying the Financial Report Copilot on Google Cloud for an end-to-end demo
+# Deploying FactFolio on Google Cloud for an end-to-end demo
 
 Updated 24 November 2026 (first written 13 November). It covers Streamlit, FastAPI, the finished Chroma collection and the hosted Qwen3-8B on one Google Cloud VM: whether the free account is enough, how long it takes, what it costs, and the steps.
 
-**Status: plan, not yet deployed.** Nothing has been created on Google Cloud. The compose override in section 5 was checked with `docker compose config`; no image has been built. Prices and trial rules were read on 24 November 2026 (section 12). Times are estimates unless marked measured.
+**Status: deployed on 27 November 2026.** Section 0 records what was actually built and how. Sections 1–12 are the original plan (24 November), kept as written; where the deployment differed, section 0 says so.
+
+## 0. As deployed (27 November 2026)
+
+FactFolio runs at **https://8-234-95-222.sslip.io** behind HTTPS and a login (user `factfolio`; the password is shared with evaluators privately).
+
+| Item | Plan (sections 1–12) | As deployed |
+|---|---|---|
+| Region and zone | `us-central1-a` | **`asia-south1-a` (Mumbai)**: next to the course LLM endpoint, which answered a test call from the VM in 0.1–0.2 s |
+| VM | `e2-standard-4`, 50 GB, Ubuntu 24.04 | Same: VM `factfolio`, project `factfolio-515919` |
+| Public address | Static IP + `sslip.io` | Static IP `8.234.95.222` (reserved as `factfolio-ip`), `https://8-234-95-222.sslip.io` |
+| Firewall | Ports 80 and 443 | Rule `factfolio-https`: tcp:80 and tcp:443 only. The API (8000) and Streamlit (8501) listen on 127.0.0.1 behind Caddy |
+| Index transfer | Colab export to a bucket | The prebuilt `chroma_db_final.tar` (5.8 GB) and `mutual_fund_data.zip` uploaded to bucket `gs://factfolio-515919-index` from a laptop, then copied to the VM and unpacked into `/srv/factfolio/indexes/` |
+| Compose override | `docker-compose.gcp.yml` (section 5) | Committed: [`docker-compose.gcp.yml`](../docker-compose.gcp.yml) and [`deploy/Dockerfile.local`](../deploy/Dockerfile.local) (packages pinned to `uv.lock`, CPU-only torch) |
+| Settings | `.env` on the VM | `.env` on the VM only (mode 600): `RAG_PROFILE=gcp`, `RAG_HOME_DIR=/srv/factfolio`, LLM endpoint port 1032, `RATE_LIMIT_PER_MINUTE=600`, `LANGSMITH_TRACING=false` (tracing per request from the UI), Caddy `DOMAIN` and password hash |
+| LangSmith | Key loaded only when enabled | Key in `.env`; tracing is switched on per question in the UI. Demo traces: project `factfolio-submission`, see [TRACES.md](../TRACES.md) |
+
+**Steps actually run** (Cloud Shell, then the VM):
+
+```bash
+# Cloud Shell
+gcloud config set project factfolio-515919
+gcloud config set compute/zone asia-south1-a
+gcloud services enable compute.googleapis.com storage.googleapis.com
+gcloud compute instances create factfolio --machine-type=e2-standard-4 \
+  --image-family=ubuntu-2404-lts-amd64 --image-project=ubuntu-os-cloud \
+  --boot-disk-size=50GB --boot-disk-type=pd-balanced --scopes=storage-ro --tags=factfolio
+gcloud storage buckets create gs://factfolio-515919-index --location=asia-south1 --uniform-bucket-level-access
+gcloud compute addresses create factfolio-ip --addresses=8.234.95.222 --region=asia-south1
+gcloud compute firewall-rules create factfolio-https --allow=tcp:80,tcp:443 --target-tags=factfolio
+
+# VM
+curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker "$USER"
+git clone https://github.com/sp-261/FactFolio.git ~/factfolio && cd ~/factfolio
+mkdir -p secrets indexes/hf_cache output && cp ~/llm_ca.crt secrets/
+gcloud storage cp gs://factfolio-515919-index/chroma_db_final.tar /srv/factfolio/
+tar -xf /srv/factfolio/chroma_db_final.tar -C /srv/factfolio/indexes/
+unzip -q /srv/factfolio/mutual_fund_data.zip -d /srv/factfolio/indexes/mutual_fund/
+alias dc='docker compose -f docker-compose.yml -f docker-compose.gcp.yml'
+dc build && dc --profile https up -d
+```
+
+**Measured on 27 November 2026:**
+
+| Check | Result |
+|---|---|
+| Index on the VM | 335,699 chunks from 509 filings (same counts as the laptop index) |
+| Index copy and image build | About 5 minutes together |
+| `/health` | `profile` gcp, `financial_backend` financial_vlm, `vlm_index_ready`, `reranker` and `ca_cert` all true |
+| JPMorgan net income trend | 7.8–13.4 s, 13/13 figures verified |
+| Vanguard 500 top holdings | 2.8–2.9 s, 21/21 figures verified |
+| Banking sector trend (54 searches) | 77.8 s; latency depends on the shared LLM endpoint's load |
+| Demo questions traced | 10 of 10 requests succeeded ([TRACES.md](../TRACES.md)) |
+
+**Operating it:** the containers restart with the VM. Stop with `gcloud compute instances stop factfolio --zone=asia-south1-a` and start with `... start ...`; the app comes back by itself at the same address. The VM stays on during evaluation; delete the VM, address, bucket and firewall rule afterwards.
+
+Prices and trial rules below were read on 24 November 2026 (section 12). Times there are estimates unless marked measured.
 
 ## 1. Summary
 
