@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Track B capstone: a citation-grounded **Agentic RAG** "Financial Report Copilot" over SEC annual reports (`financial_report_qa` only; the five other Track B domains were removed on 10 Nov 2026 and live in git history). It uses LangGraph-guarded agents, hybrid retrieval, human-in-the-loop (HITL) routing, a FastAPI backend and a Streamlit UI. It also has a local multimodal path (Qdrant, OCR, ColPali, Qwen3-VL). Python 3.12 on Windows (PowerShell). Dependencies are managed with `uv` (`uv sync`); the venv lives at `.venv/`. The README has the full command reference.
+Track B capstone: a citation-grounded **Agentic RAG** "FactFolio" over SEC annual reports (`financial_report_qa` only; the five other Track B domains were removed on 10 Nov 2026 and live in git history). It uses LangGraph-guarded agents, hybrid retrieval, human-in-the-loop (HITL) routing, a FastAPI backend and a Streamlit UI. It also has a local multimodal path (Qdrant, OCR, ColPali, Qwen3-VL). Python 3.12 on Windows (PowerShell). Dependencies are managed with `uv` (`uv sync`); the venv lives at `.venv/`. The README has the full command reference.
 
 ## Commands
 

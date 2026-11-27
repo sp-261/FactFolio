@@ -36,7 +36,8 @@ Wrong or partial answers shown to the user fell from 11 to 2. Across all 113 que
 | Git repository with reproducible code | This repository: [Quick start](#quick-start) below, `uv.lock` for exact package versions, an offline test suite |
 | Trace dashboard (Track B) | [TRACES.md](TRACES.md): LangSmith trace links and screenshots. How tracing works: [docs/observability_langsmith.md](docs/observability_langsmith.md) |
 | Model card and Responsible AI | [MODEL_CARD.md](MODEL_CARD.md): intended use, failure modes, refusals, adversarial tests |
-| Technical report | [docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx](docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx) |
+| Technical report (12 pages) | [docs/final_tech_document/FactFolio_Technical_Report.pdf](docs/final_tech_document/FactFolio_Technical_Report.pdf) (Word version: [FactFolio_Technical_Report.docx](docs/final_tech_document/FactFolio_Technical_Report.docx)) |
+| Evaluation report and failure taxonomy | Section 8 of the technical report: the Week 1 baselines, the agents against the baselines, accuracy, reliability and cost, and the failure taxonomy (Table 6) |
 | Working deployed system | Live on Google Cloud (Mumbai, e2-standard-4, Docker Compose, HTTPS): https://8-234-95-222.sslip.io. Login shared with evaluators. Deployment files: `docker-compose.gcp.yml`, `deploy/Dockerfile.local`; guide: [docs/gcp.md](docs/gcp.md) |
 | Demo video (10 min) | [link to be added] |
 
@@ -49,11 +50,11 @@ Python 3.12 and [uv](https://docs.astral.sh/uv/) are recommended. Commands are s
 ```bash
 git clone https://github.com/sp-261/FactFolio.git
 cd FactFolio
-uv sync
+uv sync --python 3.12
 .venv/bin/python -m pytest tests -q
 ```
 
-About 720 tests run offline in a few minutes. They cover the agents, guardrails, retrieval, API and UI.
+745 tests run offline in about 1.5 minutes (Python 3.12, pinned in `.python-version`). They cover the agents, guardrails, retrieval, API and UI.
 
 ### 2. Offline demo (mock LLM, no keys)
 
