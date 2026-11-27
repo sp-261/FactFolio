@@ -1,0 +1,30 @@
+# Google Cloud VM override, as deployed on 27 Nov 2026 (asia-south1, e2-standard-4):
+#   docker compose -f docker-compose.yml -f docker-compose.gcp.yml --profile https up -d
+# Chroma only (no Qdrant), local bge-small embeddings, reranker, longer timeouts. See docs/gcp.md.
+x-build: &build
+  context: .
+  dockerfile: deploy/Dockerfile.local
+
+services:
+  qdrant:
+    profiles: ["qdrant"]
+  api:
+    build: *build
+    depends_on: !reset []
+    mem_limit: 8g
+    environment:
+      RAG_BACKEND: financial_vlm
+      RAG_EMBEDDING_PROVIDER: local
+      RAG_RERANKER_MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2
+      HF_HOME: /app/indexes/hf_cache
+      RAG_REQUEST_TIMEOUT_SECONDS: "180"
+      RAG_HTTP_TIMEOUT_SECONDS: "90"
+      OMP_NUM_THREADS: "4"
+    volumes:
+      - ./output:/app/output
+      - ./data/raw/financial_report_qa/pdfs/NASDAQ_AAPL_2024.pdf:/app/data/raw/financial_report_qa/pdfs/NASDAQ_AAPL_2024.pdf:ro
+  ui:
+    build: *build
+    mem_limit: 2g
+    environment:
+      API_TIMEOUT_SECONDS: "300"
