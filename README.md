@@ -37,6 +37,7 @@ Wrong or partial answers shown to the user fell from 11 to 2. Across all 113 que
 | Trace dashboard (Track B) | [TRACES.md](TRACES.md): LangSmith trace links and screenshots. How tracing works: [docs/observability_langsmith.md](docs/observability_langsmith.md) |
 | Model card and Responsible AI | [MODEL_CARD.md](MODEL_CARD.md): intended use, failure modes, refusals, adversarial tests |
 | Technical report | [docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx](docs/final_tech_document/FactFolio_Financial_Report_Technical_Documentation.docx) |
+| Working deployed system | Live on Google Cloud (Mumbai, e2-standard-4, Docker Compose, HTTPS): https://8-234-95-222.sslip.io. Login shared with evaluators. Deployment files: `docker-compose.gcp.yml`, `deploy/Dockerfile.local`; guide: [docs/gcp.md](docs/gcp.md) |
 | Demo video (10 min) | [link to be added] |
 
 ## Quick start
