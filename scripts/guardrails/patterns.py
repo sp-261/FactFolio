@@ -10,6 +10,8 @@ FINANCIAL_PROMPT_INJECTION_PATTERNS = [
     r"\bact as (a )?(developer|system|admin)\b",
     r"\boverride (the )?(policy|instructions|guardrails)\b",
     r"\bdisregard (the )?(policy|instructions)\b",
+    r"\byou are now\b.{0,60}\b(unrestricted|unfiltered|uncensored|jailbroken|no (rules|restrictions|limits|guardrails))\b",
+    r"\b(jailbreak|dan mode|developer mode)\b",
 ]
 FINANCIAL_CODE_OR_TOOL_PATTERNS = [
     r"<\s*script\b",
@@ -42,6 +44,8 @@ FINANCIAL_POLICY_REFUSALS = {
         r"\b(safest|riskiest)\b.{0,80}\b(keep|put|invest|park) (my|our) (money|savings|cash)\b",
         r"\bwhere (to|should i) (keep|put|invest) (my|our) (money|savings|cash)\b",
         r"\b(recommend|suggest) (a |which )?(stock|stocks|shares|investment)s?\b",
+        r"\bwhich (\w+ ){0,2}(stocks?|shares?) (to|should i|should we) (buy|sell|invest in)\b",
+        r"\b(stocks?|shares?) (to|i should) buy\b",
     ],
     "forecast_or_prediction": [
         r"\bpredict\b",
@@ -62,6 +66,13 @@ FINANCIAL_POLICY_REFUSALS = {
     "off_topic_creative": [
         r"\b(write|compose|make up) (me )?(a |an )?(poem|song|joke|story|limerick|rap|haiku)\b",
     ],
+    "live_market_data": [
+        r"\b(current|today'?s|live|real[- ]time) (share|stock) prices?\b",
+        r"\b(share|stock) prices? (today|now|right now|currently)\b",
+        r"\b(trading|priced) at (today|now|right now|currently)\b",
+        r"\bwhat is \S+(\s\S+){0,3} (trading|priced) at\b",
+        r"\b(current|today'?s|live) market (cap|capitalization|value)\b",
+    ],
 }
 POLICY_REFUSAL_MESSAGES = {
     "investment_advice": ("I can't give investment advice or recommendations. I can tell you what the companies' "
@@ -74,6 +85,9 @@ POLICY_REFUSAL_MESSAGES = {
                                "information."),
     "off_topic_creative": ("This copilot answers questions about companies' annual reports; it doesn't write "
                            "creative pieces."),
+    "live_market_data": ("I don't have live market data such as current share prices or market value. I answer from "
+                         "published annual reports: ask for a reported figure, for example revenue, net income or "
+                         "dividends per share."),
 }
 
 INPUT_BLOCKING_LABELS = {"prompt_injection", "code_or_tool_payload", "secret_or_credential"}
